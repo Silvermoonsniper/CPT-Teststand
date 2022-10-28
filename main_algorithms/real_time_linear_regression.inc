@@ -1,4 +1,6 @@
 rem subroutine to perform linear regression with incremental approaches
+rem highly efficient to perform linear regression calculation with two 1D data by updating summation and product terms in real time with an incremental approach.
+rem  instead of using loops for calculation, the computational complexity is reduced to O(1).
 rem   input args:
 rem          estimated_slope_array[]: array to store estimated slope 
 rem          estimated_intercept_array[]: array to store estimated intercept
