@@ -1,7 +1,7 @@
 # CPT-Teststand
-GUI for CPT Teststand for the cone penetration Testing. Source codes for data acquisition from distance sensor, pressure sensor, LVDT sensors, force sensor and flowmeters., communication between PC , Adwin system and peripherical devices. 
+GUI for CPT Teststand for the cone penetration Testing with Labview. Source codes for data acquisition from distance sensor, pressure sensor, LVDT sensors, force sensor and flowmeters., communication between PC , Adwin system and peripherical devices. 
 
-Force mini CPT cone to penetrate through soil samples (sand), measured soil sample deformation from LVDT sensors.
+Force mini CPT cone to penetrate through soil samples (sand), measure soil sample deformation from LVDT sensors.
 
 Pressure control regarding three air pumps to control side pressure, axial pressure and pore pressure for the CPT calibration chamber.
 
