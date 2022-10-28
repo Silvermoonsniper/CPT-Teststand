@@ -5,14 +5,23 @@
 
 #include ADwinGoldII.inc
 #include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
-#include .\BC5_boundary_condition.inc
+#include .\PI_Pressure_Control.inc
+#include .\acceleration_calc.inc
+#include .\adaptive_model_controller.inc
+#include .\data_normalization.inc
+#include .\desired_dist.inc
+#include .\estimate_para_justification.inc
+#include .\finalcontrol_output_regulation.inc
+#include .\fit_velocity.inc
+#include .\model_control_parameter_setup.inc
+#include .\fit_velocity.inc
+#include .\predict_dist.inc
+#include .\real_time_correlation_calc.inc
+#include .\real_time_linear_regression.inc
+#include .\time_delay_calc.inc
+#include .\vel_control_data_collect.inc
+#include .\velocity_calc.inc
+
 
 #Define     MODUS_INIT            0 
 #Define     MODUS_MANUEL_PISTON   1 
