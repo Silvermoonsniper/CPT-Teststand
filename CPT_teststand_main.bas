@@ -4,8 +4,15 @@
 
 
 #include ADwinGoldII.inc
-#include .\helpfunctions.inc
-
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
+#include .\BC5_boundary_condition.inc
 
 #Define     MODUS_INIT            0 
 #Define     MODUS_MANUEL_PISTON   1 
