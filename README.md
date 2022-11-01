@@ -13,7 +13,10 @@ Two control mechanisms can be applied for this teststand: PI controller and adap
 Motion control performance for CPT hydraulic piston with adaptive MPC. 
 
 
-
+<br/><br/>
+Simulation setup: 
+     vibration frequency: 10 Hz 
+     vibration amplitude: 1 mm 
 
 
 <p align="center">
