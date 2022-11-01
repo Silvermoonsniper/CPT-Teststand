@@ -10,10 +10,16 @@ Motion control for the cone with switchable control methods: adaptive MPC model 
 Two control mechanisms can be applied for this teststand: PI controller and adaptive model predictive control.
 
 
-Motion control performance for CPT hydraulic piston with adaptive MPC 
-
-![Screenshot 2022-10-18 094520](https://user-images.githubusercontent.com/89796179/199206688-add67bc0-8f7b-427d-a930-76b3de3b0b57.png)
-![Screenshot 2022-10-18 094530](https://user-images.githubusercontent.com/89796179/199206693-4056337e-d6e6-48f7-b197-509d15f7e5df.png)
+Motion control performance for CPT hydraulic piston with adaptive MPC. 
 
 
 
+
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/89796179/199206688-add67bc0-8f7b-427d-a930-76b3de3b0b57.png" width="400" />
+  </p>
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/89796179/199206693-4056337e-d6e6-48f7-b197-509d15f7e5df.png" width="400" />
+  </p>
