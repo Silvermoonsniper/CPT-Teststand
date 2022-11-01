@@ -3,7 +3,7 @@ rem function to calculate predicted distance based on local linear regression pa
 '#to past sensor measurement by L steps, L is number of datapoints which is equal to maximum correlation, then we calculate 
 '# predict distance at current time step as distance data before L points plus the summation of estimated distance difference
 '# for past L points using linear regression model
-
+' the calculation is done with incremental approach to running with high effieciency.
 rem input args:
 rem          estimated_slope_array[]: array to store estimated slope 
 rem          estimated_intercept_array[]: array to store estimated intercept
