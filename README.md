@@ -7,6 +7,6 @@ Pressure control regarding three air pumps to control side pressure, axial press
 
 Motion control for the cone with switchable control methods: adaptive MPC model predictive control and PI controller.
 
-Control mechanism for this teststand is PI controller and adaptive model predictive control.
+Two control mechanisms can be applied for this teststand: PI controller and adaptive model predictive control.
 
 
