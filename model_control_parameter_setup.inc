@@ -1,5 +1,22 @@
 rem parameter setup
-
+rem  intervalp: number of datapoints for velocity calculation
+rem  switch_frequency_button: button to switch frequency during model control
+rem  linear_calibration_flag: flag to switch on NEW BC5 for calibration chamber
+rem  WegInd_Digits: measured digital distance data
+rem  controlstart_step: button to switch on model control
+rem  predict_dist: predicted distance from model
+rem  programm_cycle[]: array to store progamm counnters
+rem  stopbutton: stop button
+rem  total_shift: data points for time delay
+rem  WegInd_RegOut: control output for distance
+rem  fulldata_number: number of datapoints for one period
+rem  Abtastfrequenz: sampling frequency
+rem  original_vib_freq: first set vibration frequency
+rem  PorePressOffset: offset for pore pressure sensor
+rem  AxialPressOffset: offset for axial pressure sensor
+rem  SidePressOffset: offset for side pressure sensor
+rem  Sinusfrequenz_Vibro: current vibration frequency
+rem  Programm_counter: counter to record number of program cycles
 Sub  parameter_steup(intervalp,switch_frequency_button,linear_calibration_flag,WegInd_Digits ,controlstart_step, predict_dist,programm_cycle[],stopbutton,total_shift ,WegInd_RegOut,fulldata_number,Abtastfrequenz,original_vib_freq,PorePressOffset,AxialPressOffset,SidePressOffset,Sinusfrequenz_Vibro,Programm_counter)  as float
   PorePressOffset  = Fpar_20
   AxialPressOffset = Fpar_21  
