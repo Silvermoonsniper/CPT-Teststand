@@ -1,5 +1,14 @@
 rem subroutie for model controller
 rem input args:
+rem     switch_vibro_dist_p: index in order to  reinitialize model controller when we switch to second vibro mode
+rem     switch_vibro_dist_p_1: index in order to  reinitialize model controller when we switch to third vibro mode
+rem     controlleroutput[]: controller output array
+rem     local_c: index for controller output array
+rem     final_switch: switch flag for final switch to model control
+rem     penetration_vel: background velocity of CPT test , mm/s
+rem     virboswitch_flag: flag indicats switch to second vibro mode
+rem     virboswitch_flag_1: flag indicats switch to third vibro mode
+rem     damping_amplitude: vibration amplitude
 rem     vel_local: velocity data
 rem     datasize_train: size of velocity data array
 rem     predict_distance_array[]: predicted distance array
@@ -25,7 +34,7 @@ rem     vel_deviation: velocity deviation
 rem     dist_err: distance error
 rem     proportion_str: constant for proportional control
   
-sub model_control(vel_local,datasize_train,predict_distance_array[],pre_dist_p, weg_ingoutarray[],enter_cycle_number,desired_dist,intervalp,linear_coff[],Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, WegInd_Digits,vel_deviation, dist_err, proportion_str) as float
+sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],local_c,final_switch,penetration_vel,virboswitch_flag, virboswitch_flag_1, damping_amplitude,vel_local,datasize_train,predict_distance_array[],pre_dist_p, weg_ingoutarray[],enter_cycle_number,desired_dist,intervalp,linear_coff[],Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, WegInd_Digits,vel_deviation, dist_err, proportion_str) as float
   
   rem  STORE estimated controller output and real one 
   DIM initial_desired_velocity as float
@@ -41,9 +50,10 @@ sub model_control(vel_local,datasize_train,predict_distance_array[],pre_dist_p, 
   
   total_shiftdist = round(0.25*Abtastfrequenz/Sinusfrequenz_Vibro) + 15
   if ((Vibro_internal_counter = total_shiftdist) and (switch_flag = 0)) then
+  
     switch_flag = 1
     rem record velocity at switch point
-    desired_distance(desired_dist,WegInd_Digits,switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,0.65*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
+    desired_distance(enter_cycle_number,switch_vibro_dist_p_1,virboswitch_flag_1,virboswitch_flag,switch_vibro_dist_p,desired_dist,WegInd_Digits,switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,0.65*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
  
     initial_desired_velocity = (desired_dist - WegInd_Digits) / intervalp
    
@@ -61,8 +71,13 @@ sub model_control(vel_local,datasize_train,predict_distance_array[],pre_dist_p, 
        
     rem calculate difference between desired and predicted distance
     
-   
+    
+    
     dec(pre_dist_p )
+    
+   
+    
+    
     total_shift = total_shift
     if (pre_dist_p > total_shift) then
       dist_err = desired_dist - predict_distance_array[pre_dist_p - total_shift]
@@ -90,33 +105,73 @@ sub model_control(vel_local,datasize_train,predict_distance_array[],pre_dist_p, 
   
     sollvel =  (desired_dist - WegInd_Digits) / intervalp
     
+
+    
+    if ((virboswitch_flag = 1) or (virboswitch_flag_1 = 1)) then q_m = 0
+    
+    if (penetration_vel > 0) then q_m = 0
+    
+    
     rem controller output from model
-    factor = round(14*(0.5*damping_amplitude-1)) + 1
-   
-    '    dec(local_c)
-    '    if (local_c > total_shift) then
-    '      factor = (1/(q_m*(sollvel-vel_deviation)))*(2- (controlleroutput[local_c-total_shift] *linear_coff[1]+ linear_coff[2]))
-    '    else
-    '      factor = (1/(q_m*(sollvel-vel_deviation)))*(2- (controlleroutput[data_sizetrain + local_c-total_shift] *linear_coff[1]+ linear_coff[2]))
-    '    
-    '          
-    '    endif
+
+    if (damping_amplitude < 2) then
+      dec(local_c)
+      if (local_c > total_shift) then
+        factor = (1/(q_m*(sollvel-vel_deviation)))*(2- (controlleroutput[local_c-total_shift] *linear_coff[1]+ linear_coff[2]))
+      else
+        factor = (1/(q_m*(sollvel-vel_deviation)))*(2- (controlleroutput[datasize_train + local_c-total_shift] *linear_coff[1]+ linear_coff[2]))
+                          
+                                
+      endif
+    else
+      factor = round(14*(0.5*damping_amplitude-1)) + 1
+    endif
+    
+    rem for very low frequency, adaptive control is deactivated for safety control 
+    if (Sinusfrequenz_Vibro < 1) then
+      q_m = 0
+    endif
     
     estimatedWegInd_RegOut = ( (1-factor*q_m)*vel_deviation + (1+ factor*q_m)*sollvel - linear_coff[2])/(linear_coff[1])
-         
-    
+   
                          
- 
+    rem check controller output before switch and cmpare it with estimated controller output
    
-    rem assign real controller output
+                       
    
-    WegInd_RegOut = estimatedWegInd_RegOut
-  
+    if (absf(controlleroutput[local_c] - estimatedWegInd_RegOut ) < 30) then
+         
+      rem assign real controller output
+         
+      final_switch = 1
+          
+    endif
     
+    rem for very small frequency
+    '  
+    
+    if (final_switch = 1) then 
+      WegInd_RegOut = estimatedWegInd_RegOut
+    else
+      
+      if ((virboswitch_flag = 1) or (virboswitch_flag_1 = 1)) then
+      
+        final_switch = 1
+      endif
+      rem according to different frequency, move dowon piston at different speed.
+      if (Sinusfrequenz_Vibro >= 1) then
+        WegInd_RegOut= 32768 + 100*(penetration_vel)
+      else   
+        WegInd_RegOut= 32768 + 200*(penetration_vel)
+     
+      endif
+       
+    endif
+                     
    
   endif
  
-  
+ 
 
   
   if (enter_cycle_number <= 2) then
@@ -125,5 +180,5 @@ sub model_control(vel_local,datasize_train,predict_distance_array[],pre_dist_p, 
     weg_ingoutarray[1] = weg_ingoutarray[2]
     weg_ingoutarray[2] = WegInd_RegOut
   endif
- 
+  
 endsub
