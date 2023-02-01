@@ -40,7 +40,8 @@ Sub PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OF
   If (Linear_Pore_GO = 0) Then  Soll_Porepressure = Set_Soll_PorePressure 
       
   PorePress_Delta = Soll_Porepressure - PorePress_Digits
-  'FPar_70 = PorePress_Delta    
+
+     
   PorePress_DeltaSum = pump_delta_sum(PorePress_DeltaSum,PorePress_Delta,Ki_Porepress)
       
   PorePress_RegOut = (Kp_Porepress * PorePress_Delta) + ( Ki_Porepress * PorePress_DeltaSum)
@@ -60,7 +61,7 @@ Sub PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OF
 endsub
 '
 '
-sub  PI_controller_sidepressure(pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array[],New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  as float
+sub  PI_controller_sidepressure(actual_sidevolume,initial_cone_position,initial_strain,start_penetrat_depth,Circumf_Control_On,pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array[],New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  as float
   '-----------------------------------------------------------------------------------------------------------------------------------------------------------
       
   If ((LinearUpDown_Button = 1) and (Linear_Side_GO = 1))  Then 
@@ -111,7 +112,7 @@ sub  PI_controller_sidepressure(pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circu
             
       rem apply new BC5 Model
               
-      New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
+      New_BC5_model_additionside_pressure(initial_cone_position,initial_strain,start_penetrat_depth,pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
    
        
   EndSelect
@@ -122,51 +123,59 @@ sub  PI_controller_sidepressure(pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circu
   rem if additional side pressure is applied
     
           
-          
+  
   rem if we use calibration of new BC5, during the calibration stage, we don't apply 
   rem additional side pressure, after penetration depth reaches 100 mm, we start to apply 
   rem side pressure
   rem if additional side pressure is  applied
-  if (linear_calibration_flag = 1) then
-    if (  lowestWeg <= WegInd_Digits) then 
-      SidePress_Delta  = Soll_Sidepressure  - SidePress_Digits
-      
-      Abschaltung_Reglungs_Wert = Soll_Sidepressure + Side_Addtion_Digits    
+  if (Circumf_Control_On = 1) then
+    if (linear_calibration_flag = 1) then
+      if (  lowestWeg <= WegInd_Digits) then 
+        SidePress_Delta  = Soll_Sidepressure  - SidePress_Digits
+                
+                    
+      else
+        SidePress_Delta  = Soll_Sidepressure + Side_Addtion_Digits - SidePress_Digits
+        
+        
+      endif
+     
+      rem with HUang su calibration   
     else
+            
+      rem calculate difference between desired pressure and measured one
+                
       SidePress_Delta  = Soll_Sidepressure + Side_Addtion_Digits - SidePress_Digits
       
-      Abschaltung_Reglungs_Wert = Soll_Sidepressure + Side_Addtion_Digits 
+      
     endif
-  else
-            
-    rem calculate difference between desired pressure and measured one
-                
-    SidePress_Delta  = Soll_Sidepressure + Side_Addtion_Digits - SidePress_Digits
+    Abschaltung_Reglungs_Wert = Soll_Sidepressure + Side_Addtion_Digits  
                      
-    Abschaltung_Reglungs_Wert = Soll_Sidepressure + Side_Addtion_Digits         
+          
+    
+    
+  else      
+    
+    rem if additional side pressure is  not applied
+    SidePress_Delta = Soll_Sidepressure - SidePress_Digits
+          
+    If ((Circumference_ON_Flag = 1)) Then 
+      SidePress_Delta = Abschaltung_Reglungs_Wert - SidePress_Digits
+    EndIf  
   endif
-          
-    
-  rem if additional side pressure is  not applied
-  SidePress_Delta = Soll_Sidepressure - SidePress_Digits
-          
-  If ((Compass_OFF = 1) and (Circumference_ON_Flag = 1)) Then 
-    SidePress_Delta = Abschaltung_Reglungs_Wert - SidePress_Digits
-  EndIf  
-    
         
-  'FPar_70 = SidePress_Delta
        
   SidePress_DeltaSum = pump_delta_sum(SidePress_DeltaSum,SidePress_Delta,Ki_Sidepress)
   
   SidePress_RegOut = ( Kp_Sidepress * SidePress_Delta ) + ( Ki_Sidepress * SidePress_DeltaSum)
   SidePress_RegOut = SidePress_RegOut + ZERO_OFFSET                                                
-                      
+                    
   If (Side_Control_Button = 0) Then              
     DAC(DIO_SpindelB, ZERO_OFFSET)
     Soll_Sidepressure =  SidePress_Digits
     SidePress_DeltaSum = 0
   Else       
+   
     DAC(DIO_SpindelB,SidePress_RegOut)             
   EndIf
 endsub
