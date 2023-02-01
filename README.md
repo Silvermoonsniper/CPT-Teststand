@@ -7,9 +7,8 @@ Force mini CPT cone to penetrate through soil samples (sand), measure soil sampl
 
 Pressure control regarding three air pumps to control side pressure, axial pressure and pore pressure for the CPT calibration chamber.
 
-Motion control for the cone with switchable control methods: adaptive MPC model predictive control and PI controller.
+Motion control for the cone with switchable control methods: adaptive model predictive control (MPC) and PI controller.
 
-Two control mechanisms can be applied for this teststand: PI controller and adaptive model predictive control.
 
 
 Motion control performance for CPT hydraulic piston with adaptive MPC. 
