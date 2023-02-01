@@ -3,7 +3,7 @@ rem function to calculate predicted distance based on local linear regression pa
 '#to past sensor measurement by L steps, L is number of datapoints which is equal to maximum correlation, then we calculate 
 '# predict distance at current time step as distance data before L points plus the summation of estimated distance difference
 '# for past L points using linear regression model
-' the calculation is done with incremental approach to running with high effieciency.
+
 rem input args:
 rem          estimated_slope_array[]: array to store estimated slope 
 rem          estimated_intercept_array[]: array to store estimated intercept
@@ -19,6 +19,9 @@ rem         estima_vel_sub[]: array to store local velocity calculated from mode
 rem         windowsize. size of distance data array
 rem         pointer_average: pointer for distance data array
 rem         local_c: pointer for controller output array 
+
+
+
 function predict_distance(linear_coff[],estimated_slope_array[],estimated_intercept_array[],estimated_parameter_pointer,predict_distance_pointer,predict_full,estima_vel_sub[], WegInd_Digits,windowsize,pointer_average,local_c,distance_data[], controlleroutput[], datasize_train ,MAX_correlationstep)  as  float
   rem define summation of estimated distance difference for past 'max_correlationstep' datapoints
   DIM delta_s_local as float
@@ -41,7 +44,7 @@ function predict_distance(linear_coff[],estimated_slope_array[],estimated_interc
       if (local_c > predict_distance_pointer) then  
         estima_vel_sub[predict_distance_pointer] = linear_coff[1] * controlleroutput[local_c-predict_distance_pointer]  + linear_coff[2]
       else
-        estima_vel_sub[predict_distance_pointer] = linear_coff[1] * controlleroutput[data_sizetrain + local_c-predict_distance_pointer]  + linear_coff[2]
+        estima_vel_sub[predict_distance_pointer] = linear_coff[1] * controlleroutput[ datasize_train + local_c-predict_distance_pointer]  + linear_coff[2]
   
       endif
             
@@ -66,13 +69,16 @@ function predict_distance(linear_coff[],estimated_slope_array[],estimated_interc
       if (local_c > predict_distance_pointer) then  
         delta_s_local = delta_s_local - estima_vel_sub[predict_distance_pointer+ 1] + linear_coff[1] * controlleroutput[local_c-predict_distance_pointer]  + linear_coff[2]
       else
-        delta_s_local = delta_s_local - estima_vel_sub[predict_distance_pointer+ 1] + linear_coff[1] * controlleroutput[data_sizetrain +local_c-predict_distance_pointer]  + linear_coff[2]
+        delta_s_local = delta_s_local - estima_vel_sub[predict_distance_pointer+ 1] + linear_coff[1] * controlleroutput[ datasize_train +local_c-predict_distance_pointer]  + linear_coff[2]
    
       endif    
-           
+      
+      inc(predict_distance_pointer)
+         
     else
+      
       if (local_c > predict_distance_pointer) then      
-        delta_s_local = delta_s_local - estima_vel_sub[1] +linear_coff[1] * controlleroutput[data_sizetrain +local_c-predict_distance_pointer]  + linear_coff[2]
+        delta_s_local = delta_s_local - estima_vel_sub[1] +linear_coff[1] * controlleroutput[ datasize_train +local_c-predict_distance_pointer]  + linear_coff[2]
       else
         
       endif
