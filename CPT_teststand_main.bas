@@ -1,9 +1,26 @@
 #include ADwinGoldII.inc
-rem modified by zhengyu chen, 2022-05-18
-rem incorporate linear regression for model-based controller
-#include .\helpfunctions.inc
+rem include various software modules
+rem --------------------------------------------------------------------------------------------------
+#include .\PI_controller\PI_Pressure_Control.inc
+#include .\numerical_calibration_chamber\BC5_boundary_condition.inc
+#include .\model_distance\desired_dist.inc
+#include .\model_distance\predict_dist.inc
+#include .\measurement_processing\acceleration_calc.inc
+#include .\measurement_processing\data_normalization.inc
+#include .\measurement_processing\vel_control_data_collect.inc
+#include .\measurement_processing\velocity_calc.inc
+#include .\main_algorithms\real_time_correlation_calc.inc
+#include .\main_algorithms\real_time_linear_regression.inc
+#include .\main_algorithms\time_delay_calc.inc
+#include .\adaptive_model_controller\adaptive_model_controller.inc
+#include .\adaptive_model_controller\estimate_para_justification.inc
+#include .\adaptive_model_controller\finalcontrol_output_regulation.inc
+#include .\adaptive_model_controller\fit_velocity.inc
+#include .\model_control_parameter_setup.inc
+rem --------------------------------------------------------------------------------------------------
 
-
+rem variables declaration 
+rem --------------------------------------------------------------------------------------------------
 #Define     MODUS_INIT            0 
 #Define     MODUS_MANUEL_PISTON   1 
 #Define     DELETE_CASE           2 
