@@ -109,9 +109,7 @@ sub distance_data_regression (time_array[],vel_local,intervalp,data_sizetrain,re
   sub_blockcalculation(estimated_slope_array,estimated_intercept_array,estimated_parameter_pointer,Abtastfrequenz,Sinusfrequenz_Vibro,dis_regression_full,pointer_average, reg_Size,distance_regression_array,reg_para,newdistance_regression_array,newtime_array,distance_subxmean,distance_subymean,distance_subxydiffpsum,distance_subxsquaresum,distpointer_vel_regression,pointer_average, WegInd_Digits,0,reg_Size) 
   
   
-  rem replace slope as smoothed distance
-  
-  '  vel_local = reg_para[2]
+
   rem record distance data for velocity calculation
       
   '       
