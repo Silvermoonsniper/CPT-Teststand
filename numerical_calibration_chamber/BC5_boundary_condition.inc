@@ -20,7 +20,7 @@ rem WegInd_Digits: distance measurement
 rem localtimestep: time step
 rem weginitial_depth: initial position of pistion, set in labview
 rem initial_piston_position: initial piston position when enters into this programm
-Sub New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array[],local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)      as float
+Sub New_BC5_model_additionside_pressure(initial_cone_position,initial_strain,start_penetrat_depth,pi,r_0,Additionalside_pressure_array[],local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)      as float
   rem #############################
   rem calibration  for linear model
          
@@ -29,7 +29,7 @@ Sub New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array[],l
   rem record starting position of piston which is set in the labview
   if (localtimestep = 1) then 
                                             
-    weginitial_depth = (Fpar_31-623)*(33076/-420) 
+    weginitial_depth = (initial_cone_position-623)*(33076/-420) 
           
     localtimestep = localtimestep + 1
   endif
@@ -38,8 +38,7 @@ Sub New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array[],l
   rem store initial measured position of piston
   if(p = 1) then
     initial_piston_position = WegInd_Digits
-    rem deubg 
-    FPar_47 = initial_piston_position
+    
     inc(p)
   endif
          
@@ -48,13 +47,13 @@ Sub New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array[],l
     rem \\\\\\\\\\\\\\\\\ new calibration model
     rem calculate largest penetration depth in digitla value to apply BC5 linear MODEL
     rem unit mm     
-    lowestWeg = (fpar_29 -623)*(33076/-420)
+    lowestWeg = (start_penetrat_depth -623)*(33076/-420)
         
     rem initial strain  
   
-    r_0 = fpar_30
+    r_0 = initial_strain
                     
-    par_8 = lowestWeg
+   
            
     rem when we don't reach penetration point, which is set is labview, typically 100mm       
     if (lowestWeg <= WegInd_Digits) then 
@@ -128,7 +127,9 @@ Sub New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array[],l
       
   endif
 
-  rem ################################
   
 
 endsub
+
+
+
