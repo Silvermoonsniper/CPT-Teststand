@@ -1,26 +1,7 @@
-
-
-
-
-
 #include ADwinGoldII.inc
-#include .\BC5_boundary_condition.inc
-#include .\PI_Pressure_Control.inc
-#include .\acceleration_calc.inc
-#include .\adaptive_model_controller.inc
-#include .\data_normalization.inc
-#include .\desired_dist.inc
-#include .\estimate_para_justification.inc
-#include .\finalcontrol_output_regulation.inc
-#include .\fit_velocity.inc
-#include .\model_control_parameter_setup.inc
-#include .\fit_velocity.inc
-#include .\predict_dist.inc
-#include .\real_time_correlation_calc.inc
-#include .\real_time_linear_regression.inc
-#include .\time_delay_calc.inc
-#include .\vel_control_data_collect.inc
-#include .\velocity_calc.inc
+rem modified by zhengyu chen, 2022-05-18
+rem incorporate linear regression for model-based controller
+#include .\helpfunctions.inc
 
 
 #Define     MODUS_INIT            0 
@@ -67,20 +48,27 @@ rem define linear model coefficients for calibration for strain-stress modle
 #Define     AxialPressOffset       FPAR_21     'Wird von Labview beschrieben
 #Define     SidePressOffset        FPAR_22     'Wird von Labview beschrieben
 #define     vibration_amplitude_modelcontrol   fpar_23
+rem define penetration velocity
+#Define     penetration_vel        FPAR_24
 #Define     Vorschub               FPAR_25     'Wird von Labview beschrieben
 #Define     Sinusfrequenz_Vibro    FPAR_26     'Wird von Labview beschrieben 
 #Define     Amplitude_Vibro        FPAR_27     'Wird von Labview beschrieben 
 #Define     PreShearingOutput      FPAR_28   'in digits
-'fpar_29 
-'fpar_30 
-#define     side_volume_change     FPAR_32  
+#Define     start_penetrat_depth   FPAR_29 
+#Define     initial_strain         FPAR_30
+#DEFINE     initial_cone_position  Fpar_31 
+#define     side_volume_change     FPAR_32
+#define     actual_side_volume_change FPAR_33  
+#Define     estimated_slope        FPAR_34
+#Define     estimated_intercept    FPAR_35
 #Define     Kp_Porepress           FPAR_40     'Wird von Labview beschrieben
 #Define     Ki_Porepress           FPAR_41     'Wird von Labview beschrieben
 #Define     Kp_Sidepress           FPAR_42     'Wird von Labview beschrieben
 #Define     Ki_Sidepress           FPAR_43     'Wird von Labview beschrieben  
 #Define     Kp_Axialpress          FPAR_44     'Wird von Labview beschrieben
 #Define     Ki_Axialpress          FPAR_45     'Wird von Labview beschrieben
-'FPar_47 = initial_piston_position  
+#define    Switch_freq_depth_static FPAR_46
+#define    time_delay_change_freq_2  Fpar_47
 #Define     PaProMin               FPAR_51     'Wird von Labview beschrieben
 #Define     Huang_Su_par_1         FPAR_55     'Wird von Labview beschrieben
 #Define     Huang_Su_par_2         FPAR_56     'Wird von Labview beschrieben
@@ -90,10 +78,12 @@ rem define linear model coefficients for calibration for strain-stress modle
 #Define     Huang_Su_par_6         FPAR_62     'Wird von Labview beschrieben
 #Define     Huang_Su_par_7         FPAR_63     'Wird von Labview beschrieben
 #define     time_delay_change_freq  Fpar_65
-
+#define     time_delay_change_freq_1  Fpar_66
 #Define     Model_PreShearing      FPAR_67
 #Define     Model_Vibro            FPAR_68    
 #Define     Switch_freq_depth      Fpar_69
+#Define     Switch_freq_depth_1    Fpar_70
+#Define     stopbutton             Fpar_71
 #Define     Set_Soll_PorePressure  FPAR_72     'Wird von Labview beschrieben 
 #Define     Set_Soll_AxialPressure FPAR_73     'Wird von Labview beschrieben 
 #Define     Set_Soll_SidePressure  FPAR_74     'Wird von Labview beschrieben
@@ -110,38 +100,50 @@ rem define linear model coefficients for calibration for strain-stress modle
 #Define     Sinusfrequenz_preSh    PAR_4        'Wird von Labview beschrieben 
 #Define     Zylinder_Move_Button   PAR_5        'Wird von Labview beschrieben
 #Define     switch_frequency_button    PAR_6
+#define     program_counter_interval   Par_7
 #define     correlation_control_button par_9    'Wird von Labview beschrieben
- 
+rem define switch flag for vibro mode switch
+rem to switch for second vibro mode
+#define virboswitch_flag   par_10               
+rem to switch for third vibro mode
+#define virboswitch_flag_1   par_11             
+
+rem define bug flag to indicate appearance of spike bug
+rem modified by zhengyu chen 2022-05-10         
+#define     BUG_flag               PAR_12   
 
 #Define     Amplitude_PreSh        PAR_13       'Wird von Labview beschrieben 
 #Define     Compass_OFF            PAR_14       'Wird von Labview beschrieben
+#define     test_finish_flag       Par_15
 #Define     SollMoog               PAR_17       'Wird von Labview beschrieben 
 #Define     Vibro_Test_Button      PAR_21       'Wird von Labview beschrieben  
 #Define     Start_Test_Button      PAR_33       'Wird von Labview beschrieben
+#Define     Enable_vibro_mode_2    PAR_34
+#Define     Enable_vibro_mode_3    PAR_35
 #Define     Circumference_ON_Flag  PAR_37       'Wird von Labview beschrieben 
-'controlstart_step =  Par_39   
+#Define     controlstart_step      Par_39   
 #Define     Pore_Control_Button    PAR_40       'Wird von Labview beschrieben
 #Define     Side_Control_Button    PAR_41       'Wird von Labview beschrieben 
 #Define     Axial_Control_Button   PAR_42       'Wird von Labview beschrieben
-'par_45 = total_shift 
+#Define      total_shift           par_45 
 #Define     Einfahren_Piston       PAR_46       'Wird von Labview beschrieben
 #define     Switch_freq_condition_fulfil fpar_49
-'total_shift_max = par_53
+#Define     total_shift_max        par_53
 
 #Define     LinearUpDown_Button    PAR_58       'Wird von Labview beschrieben
 #Define     Linear_Pore_GO         PAR_59       'Wird von Labview beschrieben
 #Define     Linear_Axial_GO        PAR_60       'Wird von Labview beschrieben
 #Define     Linear_Side_GO         PAR_61       'Wird von Labview beschrieben
 #Define     Pre_Shearing_Button    PAR_70       'Wird von Labview beschrieben
-' linear_calibration_flag = par_72
+#Define     linear_calibration_flag  par_72
 #Define     Circumf_Control_On     PAR_75       'Wird von Labview beschrieben
 
 #Define     Modus                  PAR_80       'Wird von Labview beschrieben
-'par_76 = fulldata_number 
-'  stopbutton = Fpar_71
-#Define     BC5_MODEL_selection    PAR_77       'Wird von Labview beschrieben
 
-#Define    Huang_su_formel     0
+
+#Define     BC5_MODEL_selection    PAR_77       'Wird von Labview beschrieben
+rem mode selection for different methods to calculate additional side pressure
+#Define    Huang_su_formel     0   
 #Define    New_BC5_MODEL       2
 
 
@@ -176,15 +178,18 @@ DIM reg_para[2] as float
 
 rem define pointer for time delay
 DIM time_delay_pointer as long
-
-
-
+DIM time_delay_pointer_1 as long
+DIM time_delay_pointer_2 as long
+rem pointer for initial position when we switch vibro mode
+DIM switch_vibro_dist_p as long
+DIM switch_vibro_dist_p_1 as long
 
 
 
 rem ####################################################################
 rem ####################################################################
 rem declaration part for model controller
+
 
 rem define background distance shift
 DIM back_dist_shift as float
@@ -218,8 +223,7 @@ rem controller cycle time
 Dim controlcycletime as float
 rem define controller start step
 DIM controller_startstep as long
-rem define total time offset
-DIM total_shift as long
+
 rem define local step when we start controller
 DIM localstepval as long
 '#define total_shift 64 
@@ -236,10 +240,8 @@ rem define array to store filtered distance data
 Dim filter_array[2] as float
 rem define step of time offset that corresponds to maximum correlation between controller output and velocity data
 DIm MAX_correlationstep as long
-rem define status of controller 
-DIM controlstart_step as long
-rem define penetration velocity
-DIM penetration_vel as float
+
+
 rem define predict distance at current step
 DIM predict_dist as float
 rem define desired distance at current step
@@ -263,8 +265,7 @@ REM DEFINE  distance sensor reading at first control step
 DIM initialWegInd_Digits as float
 rem flag to record 
 DIM startcontrolflag as long
-rem define stop button of controller
-DIM stopbutton as long
+
 rem define distance fifo to calculate velocity
 DIM realdistance_data[800] as float
 rem define window size for moving average filtering
@@ -289,7 +290,7 @@ DIM vel_pointer as long
 DIM corr_pointer as long
 rem define time offset array
 DIM time_offset[2] as float
-DIM total_shift_max as float
+
 rem define full flag for estimated parameters array
 DIM full_flag as long
 DIM corr_pointerdist as long
@@ -307,8 +308,7 @@ DIM corr_product[500] as float
 rem arrays for velocity and controller output buffer in correlation calculation
 DIM corr_velocity_data[500] as float
 DIM corr_controlleroutput[500] as float
-rem define fifo array to transmit correlation results
-DIM data_40[40000] as Float as Fifo
+
 #Define FIFO_correlation   data_40
 DIM m as long
 rem define means and summations for linear regression parameter calculation
@@ -422,7 +422,7 @@ rem ####################################################################
 
 
 rem declaration for side volume 
-DIM initial_side_volume as float
+DIM initial_side_volume as float    
 DIM side_volume_pointer as long
 
 
@@ -439,11 +439,13 @@ rem   data_50: 120000, original size: 80000
 rem   data_2; 20000, original size: 5000
 
 
-DIM data_1[20000]   as Long as FIFO  'zum R232 auslesen
-DIM data_12[20000]  as Long          'zum R232 auslesen
-DIM data_50[120000] as Float as Fifo  'main FIFO output 
+DIM data_1[30000]   as Long as FIFO  'zum R232 auslesen
+DIM data_12[30000]  as Long          'zum R232 auslesen
+rem define fifo array to transmit correlation results
+DIM data_40[120000] as Float as Fifo
+DIM data_50[160000] as Float as Fifo  'main FIFO output 
 
-DIM data_2[20000] as Float as Fifo
+DIM data_2[30000] as Float as Fifo
 DIM data_3[10000] as Float as Fifo
 DIM data_4[10000] as Float as Fifo
 DIM data_5[10000] as Float as Fifo
@@ -454,8 +456,7 @@ DIM data_5[10000] as Float as Fifo
 
 rem define local time step
 DIM localtimestep as long
-rem define button to switch on calibration with linear model
-DIM linear_calibration_flag as long
+
 rem define array to store additional side pressure at current and last time step
 DIM Additionalside_pressure_array[2] as float   
 rem define intial volume 
@@ -481,9 +482,7 @@ dim final_switch as long
 rem define initial position of piston
 DIM initial_piston_position as float 
 DIM p as long
-rem define bug flag to indicate appearance of spike bug
-rem modified by zhengyu chen 2022-05-10
-DIM BUG_flag as long
+
 rem define array to store program counter value at two consecutive steps
 DIM programm_cycle[2] as float
 
@@ -601,10 +600,20 @@ Init:
   Clock = 0
   Start_Test_Button = 0
   
+  test_finish_flag = 0
+  
+  
   
   '------------------------------------------------------------------------------------------------------------------------------------------ 
-  '  ------------------------------------------------------------------------------------------------------------------------------------
+  '------------------------------------------------------------------------------------------------------------------------------------
   '  Model-based controller initialization part 
+  '------------------------------------------------------------------------------------------------------------------------------------
+  '------------------------------------------------------------------------------------------------------------------------------------
+ 
+  
+  rem initialize enable second and third vibro mode button
+  Enable_vibro_mode_2 = 0
+  Enable_vibro_mode_3 = 0
   rem initialize cotroller status button
   controlstart_step = 0
   rem initialize switch controller flag 
@@ -631,8 +640,8 @@ Init:
   rem initialize time delay
   total_shift = 0
   rem initialize linear regression parameters
-  linear_coff[1] =   0.000103271
-  linear_coff[2] = -3.38759  
+  linear_coff[1] =    -0.000301003 
+  linear_coff[2] =     12.9918  
   rem initialize bug flag rem calculate number of points for full sine cycle
   fulldata_number  = 1*Abtastfrequenz/Sinusfrequenz_Vibro
   rem initialie flag to indicate spike bug
@@ -652,6 +661,11 @@ Init:
   rem initialize time delay pointer 
   time_delay_pointer = 0
   
+  time_delay_pointer_1 = 0
+  time_delay_pointer_2 = 0
+  rem initialize vibro switch flag 
+  virboswitch_flag = 0
+  virboswitch_flag_1 = 0
   rem initialize desired velocity array pointer
   
  
@@ -677,7 +691,9 @@ Init:
   subymean = 0
   subxydiffpsum = 0
   subxsquaresum = 0
- 
+  rem initialize pointer to record starting position when we change to another vibro mode
+  switch_vibro_dist_p = 0
+  switch_vibro_dist_p_1 = 0
   rem intialize velocity pointer
   vel_pointer = 1
   rem intialize correlation pointer
@@ -715,6 +731,11 @@ Init:
   distance_subxsquaresum = 0
   
   side_volume_pointer = 1
+  
+  local_counter = 0
+  localtimestep = 1
+  rem initialize p
+  p = 1
   '------------------------------------------------------------------------------------------------------------------------------------------ 
   '------------------------------------------------------------------------------------------------------------------------------------------ 
  
@@ -820,10 +841,7 @@ Init:
   
   
   
-  local_counter = 0
-  localtimestep = 1
-  rem initialize p
-  p = 1
+  
   rem \\\\\\\\\\\\\\\\\ new calibration model
 Event:
   Clock = Clock + Taktzeit / 100
@@ -931,11 +949,17 @@ Event:
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen  
   SpindelC_Digits     = Read_ADC(10b)
   
+  rem if we finish the test use manuel control mode
+  if (test_finish_flag = 1) then 
+    Modus = 1
+  endif
+  
   rem parameter setup for model controller
-  parameter_steup(intervalp,switch_frequency_button,linear_calibration_flag,WegInd_Digits ,controlstart_step, predict_dist,programm_cycle,stopbutton,total_shift ,WegInd_RegOut,fulldata_number,Abtastfrequenz,original_vib_freq,PorePressOffset,AxialPressOffset,SidePressOffset,Sinusfrequenz_Vibro,Programm_counter) 
-
+  parameter_setup(Switch_freq_depth_static,Enable_vibro_mode_2,Enable_vibro_mode_3,Switch_freq_depth_1,time_delay_pointer_1,time_delay_change_freq_1,time_delay_change_freq,damping_amplitude,penetration_vel,virboswitch_flag_1,virboswitch_flag,time_delay_pointer,Switch_freq_depth,intervalp,switch_frequency_button,linear_calibration_flag,WegInd_Digits ,controlstart_step, predict_dist,programm_cycle,stopbutton,total_shift ,WegInd_RegOut,fulldata_number,Abtastfrequenz,original_vib_freq,PorePressOffset,AxialPressOffset,SidePressOffset,Sinusfrequenz_Vibro,Programm_counter) 
+ 
   
  
+  
   If (glattung_index < 20) Then  'GlÃ¤ttung Signale
     
     Array_PoreP[glattung_index] = PorePress_Digits - PorePressOffset
@@ -988,15 +1012,13 @@ Event:
     Umfang1_Offset = LVDT_1
     Umfang2_Offset = LVDT_2
     Umfang3_Offset = LVDT_3
-    rem record initial volume
-    '    Umfang1_porevolume = SpindelA_Digits
+    rem record initial side volume
+  
     Umfang1_sidevolume = SpindelB_Digits
-    '    Umfang1_axialvolume = SpindelC_Digits
+    
   EndIf
-
-  '  SpindelA_Digits = SpindelA_Digits -  Umfang1_porevolume
+  rem calculate volumetric deformation
   actual_sidevolume = SpindelB_Digits - Umfang1_sidevolume
-  '  SpindelC_Digits = SpindelC_Digits - Umfang1_axialvolume
   
   rem record volume deformation
   LVDT_1 = LVDT_1 - Umfang1_Offset
@@ -1044,8 +1066,9 @@ Event:
       If (SollMoog < 26000) Then SollMoog = 26000 'Capping max negative velocity
       
       If (Zylinder_Move_Button = 1) Then 'Manuelle Bedienung des Kolbens
-      
+       
         DAC(DIO_Zylinder,SollMoog)
+        
         Soll_Position_Regelungswert = WegInd_Digits 'speichern der letzten SOLL Position
       
       Else ' Halten der Position
@@ -1095,9 +1118,28 @@ Event:
       
       rem generate controller output 
       if ((controlstart_step = 0)   )  then
-        amplitude_train = 2600    
-        '        WegInd_RegOut = amplitude_train*sin(2*3.1415926*(Sinusfrequenz_Vibro/Abtastfrequenz)* Vibro_internal_counter) + 32768
-        WegInd_RegOut = 32678
+        rem switch between vibro starting mode and static starting mode, depends on frequecy
+        if (Sinusfrequenz_Vibro  < 25) then
+          
+          
+          rem keep position of piston
+          
+          WegInd_Delta = WegInd_Digits - Soll_Position_Regelungswert 'auf letzte Position geregelt
+          WegInd_RegOut = (Kp_Position * WegInd_Delta)
+        
+          If (WegInd_RegOut < -MAX_OUTPUT)  Then WegInd_RegOut = -MAX_OUTPUT
+          If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
+  
+          WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
+        
+          
+        else
+                    
+          amplitude_train = 2600    
+          WegInd_RegOut = amplitude_train*sin(2*3.1415926*(Sinusfrequenz_Vibro/Abtastfrequenz)* Vibro_internal_counter) + 32768
+    
+        endif
+
       endif  
       rem ########################################
                          
@@ -1109,14 +1151,6 @@ Event:
       Distance_data_smooth(distance_data,realdistance_data,intervalp,filter_array,Programm_counter,NEWpointer_average,windowsize,reg_para[2]) 
       
      
-     
-      
-             
-      rem vibration amplitude
-      amplitude_calibration(amplitude_train,amplitude_calibration_flag,damping_pointer,fulldata_number,damping_amplitude) 
-          
-                       
-                            
      
                         
  
@@ -1135,15 +1169,13 @@ Event:
           
    
     
-          
-      rem perform linear regression with incremental approach
-      estimatedWegInd_RegOut =  WegInd_RegOut
       
-   
+     
+     
       
       
-      ' when we start the controller and (Start_Test_Button = 1) 
-      if ((controlstart_step = 1)   )  then
+      ' when we start the controller and (Start_Test_Button = 1)
+      if ((controlstart_step = 1)    )  then
         
       
         
@@ -1153,54 +1185,23 @@ Event:
         acceleration_cal(accleration_full,intervalp,local_acceleration,acceleration_size,data_sizetrain,accleration,velocity_data,local_vel_pointer) 
                          
                   
-        rem justify estimated parameters
+      
         if (switch_flag = 1) then
           estimated_parameters_justification(Start_Test_Button,full_flag,estimated_parameter_pointer,linear_coff,estimated_slope_array,estimated_intercept_array)  
         endif
-       
-        rem automatically change the frequency when we reach certain depth
-        if (switch_frequency_button = 1) then
-          if ((-420/33076) * WegInd_Digits+623   >= Switch_freq_depth ) then
-            inc(time_delay_pointer)
-            if (time_delay_pointer >= round(time_delay_change_freq*Abtastfrequenz)) then
-                        
-              rem set time delay
-            
-              rem set initial time delay
-              if (Sinusfrequenz_Vibro < 10) then intervalp = 40*(10 - Sinusfrequenz_Vibro) + 200
-              if (Sinusfrequenz_Vibro >= 10) then intervalp = 14*(10 - Sinusfrequenz_Vibro) + 200
-  
-              rem set initial time delay
-              total_shift = 125 + round(0.5*(intervalp- 200))
-              par_45 = total_shift
-                     
-              Sinusfrequenz_Vibro = fpar_52
-            
-    
-
-            endif      
-          endif
-        endif
-            
+      
+      
         rem calculate desired distance
       
         
-        desired_distance(desired_dist,WegInd_Digits,switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,1*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
+        desired_distance(enter_cycle_number,switch_vibro_dist_p_1,virboswitch_flag_1,virboswitch_flag,switch_vibro_dist_p,desired_dist,reg_para[2],switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,1*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
  
         rem main model control part
-        
-        model_control(vel_local,data_sizetrain,predict_distance_array,pre_dist_p,weg_ingoutarray,enter_cycle_number,desired_dist,intervalp,linear_coff,Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, reg_para[2],vel_deviation, dist_err, proportion_str) 
+       
+        model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput,local_c,final_switch,penetration_vel,virboswitch_flag, virboswitch_flag_1,damping_amplitude,vel_local,data_sizetrain,predict_distance_array,pre_dist_p,weg_ingoutarray,enter_cycle_number,desired_dist,intervalp,linear_coff,Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, reg_para[2],vel_deviation, dist_err, proportion_str) 
       
-        if (switch_frequency_button = 1) then
-          if ((-420/33076) * WegInd_Digits+623   >= Switch_freq_depth ) then
-            if (time_delay_pointer < round(time_delay_change_freq*Abtastfrequenz)) then
-              rem stop penetration first
-              WegInd_RegOut = 32768
-            endif
-                   
-          endif
-        endif 
         
+       
                                     
       endif
        
@@ -1211,17 +1212,19 @@ Event:
       
       sub_blockcalculation(estimated_slope_array,estimated_intercept_array,estimated_parameter_pointer,Abtastfrequenz,Sinusfrequenz_Vibro,v_fullFLAG,local_vel_pointer, data_sizetrain,velocity_data,linear_coff,newvelocity_data,newcontrolleroutput,subxmean,subymean,subxydiffpsum,subxsquaresum,pointer_vel_regression ,WegInd_RegOut, vel_local, total_shift,fulldata_number) 
       
+      estimated_slope  = linear_coff[1]
+      estimated_intercept = linear_coff[2]
+      rem justify estimated parameters
       
-      fpar_34 = linear_coff[1]
-      fpar_35 = linear_coff[2]
       
       rem subroutine to get velocity and controller output array
                   
       vel_controloutput_array(Sinusfrequenz_Vibro,WegInd_RegOut, local_c,controlleroutput,vel_local,velocity_data,local_vel_pointer, data_sizetrain,WegInd_Digits,fulldata_number)
-
       rem fitted velocity from linear model
+      '      if ((virboswitch_flag = 0) and (virboswitch_flag_1 = 0)) then
       Fit_vel_calcul(linear_coff,controlstart_step,fittedlinear_coff,fitted_vel,WegInd_RegOut )
-    
+      '    endif
+      
       
      
       rem steps to trace back and obtain predicted distance
@@ -1230,7 +1233,9 @@ Event:
       MAX_correlationstep = total_shift
              
       rem calculate predicted distance
-     
+      if (Sinusfrequenz_Vibro >=0.13) then
+        dec(local_c)
+      endif
       predict_dist = predict_distance(linear_coff,estimated_slope_array,estimated_intercept_array,estimated_parameter_pointer,predict_distance_pointer,predict_full,estima_vel_sub,WegInd_Digits,windowsize,NEWpointer_average,local_c,distance_data, controlleroutput, data_sizetrain,MAX_correlationstep)
        
       rem record predict distance into array
@@ -1240,21 +1245,18 @@ Event:
       else
         pre_dist_p =1 
       endif
-
-      rem  subroutine for dead zone control and safety concern for controller output                    
-      Control_output_final_regulation(stopbutton,DIO_Zylinder, pointer_average,PISTON_OFFSET,distance_data,windowsize,estimatedWegInd_RegOut,WegInd_RegOut,WegInd_Digits,vibration_amplitude_modelcontrol) 
-        
-
      
-      
-      
+      rem  subroutine for dead zone control and safety concern for controller output                    
+      Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_Delta,Soll_Position_Regelungswert,time_delay_change_freq_2,time_delay_pointer_2,Switch_freq_depth_static,time_delay_change_freq_1,time_delay_pointer_1,Enable_vibro_mode_3,time_delay_change_freq,Abtastfrequenz,time_delay_pointer,Enable_vibro_mode_2,switch_frequency_button,Switch_freq_depth_1,Switch_freq_depth,stopbutton,DIO_Zylinder, pointer_average,PISTON_OFFSET,distance_data,windowsize,estimatedWegInd_RegOut,WegInd_RegOut,WegInd_Digits,vibration_amplitude_modelcontrol) 
+        
+     
      
       ' Pressure control with PI controller   
       '----------------------------------------------------------------------------------------------------------------
       
       PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OFFSET,Kp_Porepress,Ki_Porepress,PorePress_RegOut,PorePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_PorePressure,PorePress_Delta, Soll_Porepressure,PorePress_Digits)  
-        
-      PI_controller_sidepressure(pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array,New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  
+      
+      PI_controller_sidepressure(actual_sidevolume,initial_cone_position,initial_strain,start_penetrat_depth,Circumf_Control_On,pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array,New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  
  
       PI_controller_Axialpressure(Pre_Shearing_Button,Model_PreShearing,Amplitude_PreSh,Sinusfrequenz_preSh,PreSh_internal_counter,Linear_Axial_GO,PaProMin,DIO_SpindelC,Axial_Control_Button,ZERO_OFFSET,Kp_Axialpress,Ki_Axialpress,AxialPress_RegOut,AxialPress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_AxialPressure,AxialPress_Delta, Soll_Axialpressure,AxialPress_Digits)  
    
@@ -1302,9 +1304,11 @@ Event:
       rem controller output for distance sensor data
       WegInd_RegOut = WegInd_RegOut + ZERO_OFFSET
       
-      
-      DAC(DIO_Zylinder,WegInd_RegOut)
-
+      if (stopbutton = 0 ) then
+        DAC(DIO_Zylinder,WegInd_RegOut)
+      else
+        DAC(DIO_Zylinder,32768)
+      endif
 
       '-----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1321,13 +1325,14 @@ Event:
       If (Linear_Pore_GO = 0) Then  Soll_Porepressure = Set_Soll_PorePressure 
       
       PorePress_Delta = Soll_Porepressure - PorePress_Digits
-      'FPar_70 = PorePress_Delta    
+          
       PorePress_DeltaSum = pump_delta_sum(PorePress_DeltaSum,PorePress_Delta,Ki_Porepress)
       
       PorePress_RegOut = (Kp_Porepress * PorePress_Delta) + ( Ki_Porepress * PorePress_DeltaSum)
       PorePress_RegOut = PorePress_RegOut + ZERO_OFFSET
+      
       'FPar_71 = PorePress_RegOut
-                    
+              
       If (Pore_Control_Button = 0) Then              
         DAC(DIO_SpindelA, ZERO_OFFSET)
         Soll_Porepressure =  PorePress_Digits
@@ -1344,14 +1349,17 @@ Event:
       '-----------------------------------------------------------------------------------------------------------------------------------------------------------
       
       rem detect change in side volume 
-      if ((LinearUpDown_Button = 1) and (Linear_Side_GO = 1))  Then 
-        if (side_volume_pointer = 1) then
-          initial_side_volume = SpindelB_Digits
-        endif
-        inc(side_volume_pointer)
-        rem if side volume change exceeds set value, stop loading
-        if (0.03107*(SpindelB_Digits-initial_side_volume) >= side_volume_change) then Side_Control_Button = 0
-      endif
+      '      if ((LinearUpDown_Button = 1) and (Linear_Side_GO = 1))  Then 
+      '        if (side_volume_pointer = 1) then
+      '          rem record initial digital side volume 
+      '          initial_side_volume = SpindelB_Digits
+      '        endif
+      '        inc(side_volume_pointer)
+      '        rem actual side volume change in ml
+      '        actual_side_volume_change = 0.03107*(SpindelB_Digits-initial_side_volume)
+      '        rem if side volume change exceeds set value, stop loading
+      '        if (0.03107*(SpindelB_Digits-initial_side_volume) >= side_volume_change) then Side_Control_Button = 0
+      '      endif
     
     
       If ((LinearUpDown_Button = 1) and (Linear_Side_GO = 1))  Then 
@@ -1385,7 +1393,7 @@ Event:
                               
        
         rem apply new BC5 Model  
-        New_BC5_model_additionside_pressure(pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
+        New_BC5_model_additionside_pressure(initial_cone_position,initial_strain,start_penetrat_depth,pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
   
       
         
@@ -1424,7 +1432,7 @@ Event:
       SidePress_DeltaSum = pump_delta_sum(SidePress_DeltaSum,SidePress_Delta,Ki_Sidepress)
        
 
-      SidePress_RegOut = ( Kp_Sidepress * SidePress_Delta ) + ( 0.1*Ki_Sidepress * SidePress_DeltaSum)
+      SidePress_RegOut = ( Kp_Sidepress * SidePress_Delta ) + ( Ki_Sidepress * SidePress_DeltaSum)
       SidePress_RegOut = SidePress_RegOut + ZERO_OFFSET                                                
                   
       If (Side_Control_Button = 0) Then              
@@ -1437,6 +1445,7 @@ Event:
         
         
       Else       
+       
         DAC(DIO_SpindelB,SidePress_RegOut)             
       EndIf
    
@@ -1650,14 +1659,14 @@ Event:
   
   FIFO_correlation = local_acceleration
   FIFO_correlation = (-420/33076) *vel_deviation
-  
+  FIFO_correlation = 1
   rem check first appearance of event that Programm_counter reaches 32768 
   rem modified by Zhengyu Chen 2022-05-10
   rem as for the case of data overflow (spikes appear). The value of program counter suddenly drops to 32768
   rem this is discovered by data analysis for datasets containing spikes.
   if (Programm_counter = 32768) then
     inc(BUG_flag)
-    Par_13 = BUG_flag 
+    Par_12 = BUG_flag 
   endif
 
   rem for the case that program counter suddenly drops, spike bug will happen because of data overflow,
@@ -1668,12 +1677,12 @@ Event:
   rem modified by Zhengyu Chen 2022-04-29
   rem check if there are sufficient number of elements in FIFO to write into
   rem we only transmit fifo data into PC if above condition holds true
-  Par_7 = programm_cycle[2] - programm_cycle[1]
+  program_counter_interval = programm_cycle[2] - programm_cycle[1]
   
   
   rem first check if there is dataoverflow (spike) bug
     
-  if ( Par_7 =1 )THEN
+  if ( program_counter_interval =1 )THEN
     if (BUG_flag <= 1) then
       if (FIFO_Empty(50) > 50)  Then
         FIFO_MAIN_OUT = Programm_counter                                                ' 1 Cycles of Adwin program
@@ -1738,7 +1747,6 @@ Event:
       rem otherwise PAR_12 WILL TRUN to be 1 immediately, because FIFO data is not sending to PC and thus we will 
       rem run out of fifo buffer immediately.
    
-      Par_12 = 1
       rem clear out fifo data if bug happens
       rem modified by zhengyu chen 2022-05-10
       fifo_clear(50)
@@ -1759,7 +1767,7 @@ Event:
   
   rem record processing clock cycles at the point which data are written into Fifo
   fifotime = Read_Timer()
-  par_11 = fifotime - readtdatatime 
+
   rem time resolution system clock of T12.1 processor is 1.5ns
   rem calculate real time from clock cycles, unit: ns
   
