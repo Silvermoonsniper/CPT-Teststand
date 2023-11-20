@@ -5,12 +5,12 @@ The cone is attached to the force sensor with dimension of 5mm2. The pore pressu
 
 Force mini CPT cone to penetrate through soil samples (sand), measure soil sample deformation from LVDT sensors.
 
-Pressure control regarding three air pumps to control side pressure, axial pressure and pore pressure for the CPT calibration chamber.
+Pressure control for three air pumps to control side pressure, axial pressure and pore pressure for the CPT calibration chamber.
 
 Motion control for the cone with switchable control methods: adaptive model predictive control (MPC) and PI controller.
 
 
-
+# Simulation example
 Motion control performance for CPT hydraulic piston with adaptive MPC. 
 <br/>
 Simulation setup: <br/>
