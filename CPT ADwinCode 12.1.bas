@@ -1601,9 +1601,9 @@ Event:
         
       '      '          
       '      '        
-      PorePress_Digits = PorePress_Digits + (15*sin(2*3.14159*(Sinusfrequenz_Vibro/Abtastfrequenz)* (Vibro_internal_counter)))/(12000 / 65536)
+      '      PorePress_Digits = PorePress_Digits + (15*sin(2*3.14159*(Sinusfrequenz_Vibro/Abtastfrequenz)* (Vibro_internal_counter)))/(12000 / 65536)
       '     
-      PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OFFSET,Kp_Porepress,Ki_Porepress,PorePress_RegOut,PorePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_PorePressure,PorePress_Delta, Soll_Porepressure,PorePress_Digits)  
+      PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OFFSET,Kp_Porepress,Ki_Porepress,PorePress_RegOut,PorePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,newSet_Soll_PorePressure,PorePress_Delta, Soll_Porepressure,PorePress_Digits)  
       
       PI_controller_sidepressure(initial_sidepress_digits,r2,h_p,initial_strain,SpindelB_Digits,Volume_triangular,Advance_cone_response_slope,Advance_cone_response_intercept, actual_sidevolume,initial_cone_position,initial_strain,start_penetrat_depth,Circumf_Control_On,pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array,New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,newSet_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  
  
