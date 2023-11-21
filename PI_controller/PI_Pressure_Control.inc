@@ -1,27 +1,3 @@
-Function pump_delta_sum(Press_DeltaSum,Press_Delta,Ki) as float
-  
-  Press_DeltaSum  = Press_Delta + Press_DeltaSum
-      
-  If ((Press_Delta > 15)  and (Press_DeltaSum < 0)) Then  
-    Press_DeltaSum = Press_DeltaSum * 0.9
-  else
-    If ((Press_Delta < -15) and (Press_DeltaSum > 0)) Then  
-      Press_DeltaSum = Press_DeltaSum * 0.9
-    else 
-      If ((Press_Delta < 10)  and (Press_Delta > -10))   Then  Press_DeltaSum = Press_DeltaSum * 0.9995
-  
-    Endif
-  Endif
-  If ( Ki * Press_DeltaSum < -20000) Then Press_DeltaSum = -20000 / Ki
-  If ( Ki * Press_DeltaSum > 20000)  Then Press_DeltaSum = 20000  / Ki
-  
-  pump_delta_sum = Press_DeltaSum
-  
-EndFunction
-
-
-
-rem PI controller part for pressure control
 
 Sub PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OFFSET,Kp_Porepress,Ki_Porepress,PorePress_RegOut,PorePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_PorePressure,PorePress_Delta, Soll_Porepressure,PorePress_Digits)  as float
   
@@ -38,7 +14,7 @@ Sub PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OF
   EndIf
       
   If (Linear_Pore_GO = 0) Then  Soll_Porepressure = Set_Soll_PorePressure 
-      
+ 
   PorePress_Delta = Soll_Porepressure - PorePress_Digits
 
      
@@ -61,7 +37,7 @@ Sub PI_controller_porepressure(PaProMin,DIO_SpindelA,Pore_Control_Button,ZERO_OF
 endsub
 '
 '
-sub  PI_controller_sidepressure(actual_sidevolume,initial_cone_position,initial_strain,start_penetrat_depth,Circumf_Control_On,pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array[],New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  as float
+sub  PI_controller_sidepressure(initial_sidepress_digits,r2,h_p,r1,SpindelB_Digits,Volume_triangular,LVDT_response_model_slope,LVDT_response_model_intercept, actual_sidevolume,initial_cone_position,initial_strain,start_penetrat_depth,Circumf_Control_On,pi,r_0,PaProMin,Linear_Side_GO,Compass_OFF,Circumference_ON_Flag,Abschaltung_Reglungs_Wert,lowestWeg, WegInd_Digits,Additionalside_pressure_array[],New_BC5_MODEL,Side_Addtion_Phys,Side_Addtion_Digits,Huang_su_formel,Huang_Su_par_1,Huang_Su_par_2,Huang_Su_par_3,Huang_Su_par_4,Huang_Su_par_5,Huang_Su_par_6,LVDT_Max, LVDT_1,LVDT_2,LVDT_3,BC5_MODEL_selection,linear_calibration_flag,DIO_SpindelB,Side_Control_Button,ZERO_OFFSET,Kp_Sidepress,Ki_Sidepress,SidePress_RegOut,SidePress_DeltaSum,LinearUpDown_Button,Linear_Pore_GO,Set_Soll_SidePressure,SidePress_Delta, Soll_Sidepressure,SidePress_Digits)  as float
   '-----------------------------------------------------------------------------------------------------------------------------------------------------------
       
   If ((LinearUpDown_Button = 1) and (Linear_Side_GO = 1))  Then 
@@ -112,7 +88,7 @@ sub  PI_controller_sidepressure(actual_sidevolume,initial_cone_position,initial_
             
       rem apply new BC5 Model
               
-      New_BC5_model_additionside_pressure(initial_cone_position,initial_strain,start_penetrat_depth,pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
+      New_BC5_model_additionside_pressure(initial_sidepress_digits,SidePress_Digits,r2,h_p,r1,SpindelB_Digits,Volume_triangular,LVDT_response_model_slope,LVDT_response_model_intercept, initial_cone_position,initial_strain,start_penetrat_depth,pi,r_0,Additionalside_pressure_array,local_counter,Side_Addtion_Digits,Side_Addtion_Phys,actual_sidevolume,strain_linear_slope, delta_r, strain_linear_intercept,Actual_volume,initial_volume,linear_calibration_flag,lowestWeg,WegInd_Digits,localtimestep,weginitial_depth,initial_piston_position)  
    
        
   EndSelect
