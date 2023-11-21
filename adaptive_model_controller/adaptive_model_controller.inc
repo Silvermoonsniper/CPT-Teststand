@@ -1,5 +1,13 @@
 rem subroutie for model controller
 rem input args:
+rem     control_cycle: number of control cycle
+rem     Kp_Position: Kp const fo pi control
+rem     ZERO_OFFSET: digital zero voltage value
+rem     MAX_OUTPUT: Max digiatl output
+rem     WegInd_Delta: error term in PI control
+rem     Soll_Position_Regelungswert: desired digital distance
+rem     amplify_factor_m: amplify factor
+rem     current_p_vel: current background velocity
 rem     switch_vibro_dist_p: index in order to  reinitialize model controller when we switch to second vibro mode
 rem     switch_vibro_dist_p_1: index in order to  reinitialize model controller when we switch to third vibro mode
 rem     controlleroutput[]: controller output array
@@ -34,7 +42,7 @@ rem     vel_deviation: velocity deviation
 rem     dist_err: distance error
 rem     proportion_str: constant for proportional control
   
-sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],local_c,final_switch,penetration_vel,virboswitch_flag, virboswitch_flag_1, damping_amplitude,vel_local,datasize_train,predict_distance_array[],pre_dist_p, weg_ingoutarray[],enter_cycle_number,desired_dist,intervalp,linear_coff[],Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, WegInd_Digits,vel_deviation, dist_err, proportion_str) as float
+sub model_control(Vibro_mode_2_background_vel,Vibro_mode_3_background_vel,control_cycle,Kp_Position,ZERO_OFFSET,MAX_OUTPUT,WegInd_Delta,Soll_Position_Regelungswert,amplify_factor_m,current_p_vel,switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],local_c,final_switch,penetration_vel,virboswitch_flag, virboswitch_flag_1, damping_amplitude,vel_local,datasize_train,predict_distance_array[],pre_dist_p, weg_ingoutarray[],enter_cycle_number,desired_dist,intervalp,linear_coff[],Abtastfrequenz,Sinusfrequenz_Vibro,Vibro_internal_counter,total_shiftdist, WegInd_RegOut,sollvel,initialWegInd_Digits,predict_dist,estimatedWegInd_RegOut,total_shift,switch_flag,global_pointer, WegInd_Digits,vel_deviation, dist_err, proportion_str) as float
   
   rem  STORE estimated controller output and real one 
   DIM initial_desired_velocity as float
@@ -48,19 +56,40 @@ sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],l
   rem switch when distance cross zero
   rem shift points for get same phase between desired and measured distance
   
+  '  total_shiftdist = 1
   total_shiftdist = round(0.25*Abtastfrequenz/Sinusfrequenz_Vibro) + 15
   if ((Vibro_internal_counter = total_shiftdist) and (switch_flag = 0)) then
-  
-    switch_flag = 1
-    rem record velocity at switch point
-    desired_distance(enter_cycle_number,switch_vibro_dist_p_1,virboswitch_flag_1,virboswitch_flag,switch_vibro_dist_p,desired_dist,WegInd_Digits,switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,0.65*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
  
-    initial_desired_velocity = (desired_dist - WegInd_Digits) / intervalp
-   
+    total_shiftdist = Vibro_internal_counter
+    if ((-420/33076) * WegInd_Digits + 623 < (Switch_freq_depth-2)) then
     
+      switch_flag = 1
+    else
+      if ((virboswitch_flag = 1) or (virboswitch_flag_1 = 1)) then
+        switch_flag = 1
+      
+      endif
+      
+    endif 
+    rem record velocity at switch point
+ 
+    '    if (final_switch = 1) then
+    if (switch_flag = 1) then
+      desired_distance(Vibro_mode_2_background_vel,Vibro_mode_3_background_vel,control_cycle,final_switch,final_switch_flag,current_p_vel,amplify_factor_m,enter_cycle_number,switch_vibro_dist_p_1,virboswitch_flag_1,virboswitch_flag,switch_vibro_dist_p,desired_dist,WegInd_Digits,switch_flag,total_shiftdist, original_vib_freq,local_index,penetration_vel,global_pointer,desired_distpointer,total_shiftdist,initialWegInd_Digits,fulldata_number,Abtastfrequenz,0.65*damping_amplitude,Sinusfrequenz_Vibro,Vibro_internal_counter)
+ 
+      initial_desired_velocity = (desired_dist - WegInd_Digits) / intervalp
+    else
+      desired_dist = Soll_Position_Regelungswert
+      
+    
+      
+    endif
    
   endif
+  
  
+  
+       
   
   if (switch_flag = 1) then
     
@@ -80,9 +109,9 @@ sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],l
     
     total_shift = total_shift
     if (pre_dist_p > total_shift) then
-      dist_err = desired_dist - predict_distance_array[pre_dist_p - total_shift]
+      dist_err = desired_dist - predict_distance_array[pre_dist_p - 0]
     else
-      dist_err = desired_dist - predict_distance_array[datasize_train + pre_dist_p - total_shift]
+      dist_err = desired_dist - predict_distance_array[datasize_train + pre_dist_p - 0]
     endif 
     
     
@@ -97,15 +126,23 @@ sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],l
  
     rem calculate velocity deviation at current step
     
-    vel_deviation = 1*dist_err/ total_shift
-        
+    '    if (final_switch = 1) then
+    '      vel_deviation = 1*dist_err/ round(0.769*total_shift)
+    '    else
+    '      
+    '      vel_deviation = 1*dist_err/ round(0.769*total_shift)
+    '    endif
     
-  
+    if (final_switch = 1) then
+      vel_deviation =amplify_factor_m*( 1*dist_err/ round((1)*total_shift))
+    else
+      
+      vel_deviation = amplify_factor_m*( 1*dist_err/ round((1)*total_shift))
+    endif
     rem desired velocity 
   
     sollvel =  (desired_dist - WegInd_Digits) / intervalp
-    
-
+  
     
     if ((virboswitch_flag = 1) or (virboswitch_flag_1 = 1)) then q_m = 0
     
@@ -113,9 +150,9 @@ sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],l
     
     
     rem controller output from model
-
+    
     if (damping_amplitude < 2) then
-      dec(local_c)
+      '      dec(local_c)
       if (local_c > total_shift) then
         factor = (1/(q_m*(sollvel-vel_deviation)))*(2- (controlleroutput[local_c-total_shift] *linear_coff[1]+ linear_coff[2]))
       else
@@ -131,41 +168,72 @@ sub model_control(switch_vibro_dist_p,switch_vibro_dist_p_1,controlleroutput[],l
     if (Sinusfrequenz_Vibro < 1) then
       q_m = 0
     endif
-    
-    estimatedWegInd_RegOut = ( (1-factor*q_m)*vel_deviation + (1+ factor*q_m)*sollvel - linear_coff[2])/(linear_coff[1])
    
-                         
+   
+    q_m = 0
+    
+   
+      
+      
+      
+    estimatedWegInd_RegOut = (( (1-factor*q_m)*vel_deviation + (1+ factor*q_m)*sollvel - linear_coff[2])/(linear_coff[1]))
+    
+   
+      
+                   
     rem check controller output before switch and cmpare it with estimated controller output
-   
-                       
-   
-    if (absf(controlleroutput[local_c] - estimatedWegInd_RegOut ) < 30) then
-         
-      rem assign real controller output
-         
-      final_switch = 1
-          
-    endif
-    
+                
+ 
+    '    if (absf(controlleroutput[local_c] - estimatedWegInd_RegOut ) < 30) then
+                                 
+    rem assign real controller output
+                                 
+    final_switch = 1
+                                  
+    '  endif
+                    
     rem for very small frequency
-    '  
-    
+      
+    rem switch to final model controller when estimated control output (model) is sufficiently close to 
+    rem actual control output, this is in order to smooth the controller and piston motion.                
     if (final_switch = 1) then 
       WegInd_RegOut = estimatedWegInd_RegOut
     else
       
-      if ((virboswitch_flag = 1) or (virboswitch_flag_1 = 1)) then
       
-        final_switch = 1
-      endif
-      rem according to different frequency, move dowon piston at different speed.
-      if (Sinusfrequenz_Vibro >= 1) then
-        WegInd_RegOut= 32768 + 100*(penetration_vel)
-      else   
-        WegInd_RegOut= 32768 + 200*(penetration_vel)
+      
+      rem hold the position of piston when model controller mode is not engaged.                      
+      '      if (virboswitch_flag = 0)  then          
+      WegInd_Delta = WegInd_Digits - Soll_Position_Regelungswert 'auf letzte Position geregelt
+      WegInd_RegOut = (Kp_Position * WegInd_Delta)
+                                                                    
+      If (WegInd_RegOut < -MAX_OUTPUT)  Then WegInd_RegOut = -MAX_OUTPUT
+      If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
+                                                              
+      WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
+              
+      '    else
+      '      WegInd_RegOut= 32668 + 100*(current_p_vel)  
+      '                      
+      '    endif     
+      '                    
+      '                    
+      '    if (virboswitch_flag_1 = 0)  then          
+      '      WegInd_Delta = WegInd_Digits - Soll_Position_Regelungswert 'auf letzte Position geregelt
+      '      WegInd_RegOut = (Kp_Position * WegInd_Delta)
+      '                                                                          
+      '      If (WegInd_RegOut < -MAX_OUTPUT)  Then WegInd_RegOut = -MAX_OUTPUT
+      '      If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
+      '                                                                    
+      '      WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
+      '                    
+      '    else
+      '      WegInd_RegOut= 32668 + 100*(current_p_vel)  
+      '                    
+      '    endif                 
      
-      endif
        
+                         
     endif
                      
    
