@@ -41,7 +41,8 @@ Sub Distance_data_smooth(distance_data[], realdistance_data[],intervalp,filter_a
     rem spilt distance data buffer into small piece, for each piece calculat its average portion
        
     pointer_average = 0
-      
+    inc(pointer_average) 
+    distance_data[pointer_average] =  WegInd_Digits 
         
   endif
   
@@ -59,8 +60,6 @@ Sub Distance_data_smooth(distance_data[], realdistance_data[],intervalp,filter_a
  
   
 endsub
-
-
 
 
 rem subroutine for distance data smoothing with linear regression
@@ -103,6 +102,8 @@ sub distance_data_regression (time_array[],vel_local,intervalp,data_sizetrain,re
   else
     rem reinitialize index
     pointer_average = 0
+    inc(pointer_average) 
+    distance_regression_array[pointer_average] =  WegInd_Digits
   endif 
   
   rem linear regression with incremental update
@@ -122,6 +123,8 @@ sub distance_data_regression (time_array[],vel_local,intervalp,data_sizetrain,re
   else
     '    ringbuffer(reg_para[2],realdistance_data,intervalp)
     Programm_counter = 0
+    inc(Programm_counter) 
+    realdistance_data[Programm_counter] = reg_para[2]
      
   endif
   if (Programm_counter > 0) then
