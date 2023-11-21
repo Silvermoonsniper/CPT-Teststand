@@ -20,7 +20,8 @@ sub vel_controloutput_array(Sinusfrequenz_Vibro,WegInd_RegOut, local_c,controlle
   if  (local_vel_pointer <= data_sizetrain) then 
    
     velocity_data[local_vel_pointer] = vel_local
-    local_vel_pointer =local_vel_pointer + 1                         
+    local_vel_pointer =local_vel_pointer + 1    
+                      
     rem check if velocity data has spike
     if (absf(vel_local) > 10) then
       if  (local_vel_pointer > 1) then 
@@ -35,9 +36,11 @@ sub vel_controloutput_array(Sinusfrequenz_Vibro,WegInd_RegOut, local_c,controlle
   else
     rem reinitialize index
     local_vel_pointer = 1
+    velocity_data[local_vel_pointer] = vel_local
+    local_vel_pointer =local_vel_pointer + 1 
+        
   endif
-                            
-                      
+                 
                       
   '########################################
                           
@@ -57,6 +60,6 @@ sub vel_controloutput_array(Sinusfrequenz_Vibro,WegInd_RegOut, local_c,controlle
                                
   endif
   
-
+  
     
 endsub
