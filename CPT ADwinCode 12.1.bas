@@ -11,13 +11,31 @@
 ' Stacksize                      = 1000
 ' Info_Last_Save                 = CPTTESTSTAND-PC  CPTTeststand-PC\CPT Teststand
 '<Header End>
+rem #####################################################################
+rem VERSION, 2023_11_17, Zhengyu
+rem #####################################################################
 #include ADwinGoldII.inc
-rem modified by zhengyu chen, 2022-05-18
+
 rem incorporate linear regression for model-based controller
 #include .\helpfunctions.inc
 #include .\kalman_filter.inc
 #include .\pump_control_optimization.inc
-
+#include .\PI_controller\PI_Pressure_Control.inc
+#include .\numerical_calibration_chamber\BC5_boundary_condition.inc
+#include .\model_distance\desired_dist.inc
+#include .\model_distance\predict_dist.inc
+#include .\measurement_processing\acceleration_calc.inc
+#include .\measurement_processing\data_normalization.inc
+#include .\measurement_processing\vel_control_data_collect.inc
+#include .\measurement_processing\velocity_calc.inc
+#include .\main_algorithms\real_time_correlation_calc.inc
+#include .\main_algorithms\real_time_linear_regression.inc
+#include .\main_algorithms\time_delay_calc.inc
+#include .\adaptive_model_controller\adaptive_model_controller.inc
+#include .\adaptive_model_controller\estimate_para_justification.inc
+#include .\adaptive_model_controller\finalcontrol_output_regulation.inc
+#include .\adaptive_model_controller\fit_velocity.inc
+#include .\model_control_parameter_setup.inc
 
 #Define     MODUS_INIT           0 
 #Define     MODUS_MANUEL_PISTON   1 
@@ -667,7 +685,7 @@ DIM AxialPress_Delta                As Float             'Delta aus Soll-Wert un
 DIM AxialPress_DeltaSum             As Float             'Integrationsanteil        
 DIM AxialPress_RegOut               As Float             'Ausgabewert Regler
 
-'Axial/Side/Pore Glättung
+'Axial/Side/Pore GlÃ¤ttung
 DIM glattung_index                  As Long
 
 DIM Array_PoreP[20]                 As Float
@@ -985,7 +1003,7 @@ Init:
   
   teste_cycle = 1   
                                    
-  'Positionsregler fürs Position halten
+  'Positionsregler fÃ¼rs Position halten
   Kp_Position = 5
 
   WegInd_DeltaSum     = 0
@@ -1003,7 +1021,7 @@ Init:
   PreSh_internal_counter = 0
   Vibro_internal_counter = 0
   
-  'Für die Umfangsregelung
+  'FÃ¼r die Umfangsregelung
   Umfang_Offset_Flag  = 0
   LVDT_Max            = 0
   Side_Addtion_Digits = 0
@@ -1072,100 +1090,100 @@ Event:
   rem modified by Zhengyu Chen 2022.04.26
   
   'Auslesen Kraft externer Z - Sensor (Analog 3)
-  Set_Mux1(00001b)                                'Setzt den Multiplexer I auf den Analogeingang 3 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00001b)                                'Setzt den Multiplexer I auf den Analogeingang 3 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen 
   KraftHTM_Digits = Read_ADC(01b) 
  
   'Auslesen induktiver Wegsensor (Analog 4) 
-  Set_Mux2(00001b)                                'Setzt den Multiplexer II auf den Analogeingang 4 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00001b)                                'Setzt den Multiplexer II auf den Analogeingang 4 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen
   WegInd_Digits  = Read_ADC(10b)                  'Digits 
   
   'NEW LVDT 2 (Analog 5)
-  Set_Mux1(00010b)                                'Setzt den Multiplexer I auf den Analogeingang 5 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00010b)                                'Setzt den Multiplexer I auf den Analogeingang 5 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen
   LVDT_2  = ((10 / 32768) * Read_ADC(01b))-10                   'Digits         
   
   '(Laser Oben 1 eher nicht) Valve_IST (Analog 6) 
-  Set_Mux2(00010b)                                'Setzt den Multiplexer II auf den Analogeingang 6 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00010b)                                'Setzt den Multiplexer II auf den Analogeingang 6 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen                  
   Valve_IST = Read_ADC(10b)                       'Digits
   
   'NEW LVDT 1 (Analog 7)
-  Set_Mux1(00011b)                                'Setzt den Multiplexer I auf den Analogeingang 7 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00011b)                                'Setzt den Multiplexer I auf den Analogeingang 7 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen
   LVDT_1  = ((10 / 32768) * Read_ADC(01b))-10     'in [mm]                    
   
   'OLD LVDT 2 (Analog 8) 
-  Set_Mux2(00011b)                                'Setzt den Multiplexer II auf den Analogeingang 8 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00011b)                                'Setzt den Multiplexer II auf den Analogeingang 8 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen
   'LVDT_2  = ((10 / 32768) * Read_ADC(10b))-10     'in [mm]                    
   
   'LVDT 3 (Analog 9)
-  Set_Mux1(00100b)                                'Setzt den Multiplexer I auf den Analogeingang 9 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00100b)                                'Setzt den Multiplexer I auf den Analogeingang 9 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen
   LVDT_3   = ((10 / 32768) * Read_ADC(01b))-10    'in [mm]    
   
   'OLD LVDT 1 (Analog 10)
-  Set_Mux2(00100b)                                'Setzt den Multiplexer II auf den Analogeingang 10 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00100b)                                'Setzt den Multiplexer II auf den Analogeingang 10 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen
   'LVDT_1  = ((10 / 32768) * Read_ADC(10b))-10     'in [mm]                     
   
   'Porendruck (Analog 11)
-  Set_Mux1(00101b)                                'Setzt den Multiplexer I auf den Analogeingang 11 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00101b)                                'Setzt den Multiplexer I auf den Analogeingang 11 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen
   PorePress_Digits  =  Read_ADC(01b)             
     
   'Axialdruck (Analog 12)
-  Set_Mux2(00101b)                                'Setzt den Multiplexer II auf den Analogeingang 12 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00101b)                                'Setzt den Multiplexer II auf den Analogeingang 12 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen
   AxialPress_Digits = Read_ADC(10b)                    
   
   'SidePress (Analog 13)
-  Set_Mux1(00110b)                                'Setzt den Multiplexer I auf den Analogeingang 13 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00110b)                                'Setzt den Multiplexer I auf den Analogeingang 13 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen
   SidePress_Digits  = Read_ADC(01b)               
   
   'SpindelA (Analog 14)
-  Set_Mux2(00110b)                                'Setzt den Multiplexer II auf den Analogeingang 14 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00110b)                                'Setzt den Multiplexer II auf den Analogeingang 14 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen         
   SpindelA_Digits   = Read_ADC(10b)
 
   'SpindelB (Analog 15)
-  Set_Mux1(00111b)                                'Setzt den Multiplexer I auf den Analogeingang 15 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux1(00111b)                                'Setzt den Multiplexer I auf den Analogeingang 15 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(01b)                                 'Start der AD Wandlung (01b) = Converter 1
   Wait_EOC(01b)                                   'Wartet bis AD Wandlung am Converter 1 abgeschlossen   
   SpindelB_Digits    = Read_ADC(01b)
   
   'SpindelC (Analog 16)
-  Set_Mux2(00111b)                                'Setzt den Multiplexer II auf den Analogeingang 16 Verstärkungsfaktor 1
-  IO_Sleep(200)                                   'Rem IO-ZugrIff für  200 us (MUX-Einschwingzweit) unterbrechen
+  Set_Mux2(00111b)                                'Setzt den Multiplexer II auf den Analogeingang 16 VerstÃ¤rkungsfaktor 1
+  IO_Sleep(200)                                   'Rem IO-ZugrIff fÃ¼r  200 us (MUX-Einschwingzweit) unterbrechen
   Start_Conv(10b)                                 'Start der AD Wandlung (10b) = Converter 2
   Wait_EOC(10b)                                   'Wartet bis AD Wandlung am Converter 2 abgeschlossen  
   SpindelC_Digits     = Read_ADC(10b)
@@ -1188,7 +1206,7 @@ Event:
   desired_distance_phy_transmit = (-420/33076) *WegInd_Digits + 623
  
   
-  If (glattung_index < 20) Then  'Glättung Signale
+  If (glattung_index < 20) Then  'GlÃ¤ttung Signale
     
     Array_PoreP[glattung_index] = PorePress_Digits - PorePressOffset
     Array_SideP[glattung_index] = SidePress_Digits - SidePressOffset 
@@ -1253,7 +1271,7 @@ Event:
   LVDT_2 = LVDT_2 - Umfang2_Offset
   LVDT_3 = LVDT_3 - Umfang3_Offset
   
-  'Glättung der LVDT Signale 
+  'GlÃ¤ttung der LVDT Signale 
   LVDT_1 = (LVDT_1*(1-LVDT_GLATTUNG)) + (LVDT_1_Old * LVDT_GLATTUNG)
   LVDT_1_Old = LVDT_1
   
@@ -1314,14 +1332,14 @@ Event:
   Selectcase Modus
     Case MODUS_INIT
       
-      Digout(0,1)                      'Freigabe für Moogventil
-      Digout(1,1)                      'Freigabe für Lasersensoren   
+      Digout(0,1)                      'Freigabe fÃ¼r Moogventil
+      Digout(1,1)                      'Freigabe fÃ¼r Lasersensoren   
       '      DAC(DIO_Zylinder, PISTON_OFFSET) 'Zylinder not moving (only slightly up)
       DAC(DIO_SpindelA, ZERO_OFFSET)   'SpindelA not moving
       DAC(DIO_SpindelB, ZERO_OFFSET)   'SpindelB not moving
       DAC(DIO_SpindelC, ZERO_OFFSET)   'SpindelC not moving
       if (initial_index = 0) then
-        Soll_Position_Regelungswert = WegInd_Digits   'Übergabe an den nächsten Case
+        Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
         inc(initial_index)
       else
         inc(initial_index)
@@ -1336,8 +1354,8 @@ Event:
       DAC(DIO_Zylinder,WegInd_RegOut)
     Case MODUS_MANUEL_PISTON  '--------------------------------------------------------------------------------------------------------------------------
       
-      Digout(0,1)       'Freigabe für Moogventil
-      Digout(1,1)       'Freigabe für Lasersensoren (Dickenmessung der Probe)     
+      Digout(0,1)       'Freigabe fÃ¼r Moogventil
+      Digout(1,1)       'Freigabe fÃ¼r Lasersensoren (Dickenmessung der Probe)     
       
       DAC(DIO_SpindelA, ZERO_OFFSET)   'SpindelA not moving
       DAC(DIO_SpindelB, ZERO_OFFSET)   'SpindelB not moving
@@ -1355,7 +1373,7 @@ Event:
       Else ' Halten der Position
         
         if (initial_muanuel_move_index = 0) then
-          Soll_Position_Regelungswert = WegInd_Digits   'Übergabe an den nächsten Case
+          Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
           inc(initial_muanuel_move_index)
         else
           inc(initial_muanuel_move_index)
@@ -1389,8 +1407,8 @@ Event:
       rem latest modified date> 2022.06.08    \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     Case Model_based_control
       
-      Digout(0,1)       'Freigabe fÃ¼r Moogventil
-      Digout(1,1)       'Freigabe fÃ¼r Lasersensoren
+      Digout(0,1)       'Freigabe fÃƒÂ¼r Moogventil
+      Digout(1,1)       'Freigabe fÃƒÂ¼r Lasersensoren
       
       
       
@@ -1616,8 +1634,8 @@ Event:
 
     Case MODUS_MAIN_CONTROL 'all Vibro/Spindel/Pressure Control 
       
-      Digout(0,1)       'Freigabe für Moogventil
-      Digout(1,1)       'Freigabe für Lasersensoren
+      Digout(0,1)       'Freigabe fÃ¼r Moogventil
+      Digout(1,1)       'Freigabe fÃ¼r Lasersensoren
 
 
       If ((Start_Test_Button = 1) and(Sinusfrequenz_Vibro*5000 > Vibro_internal_counter)) then 
@@ -1927,8 +1945,8 @@ Event:
       
     case MODUS_SHUTDOWN   '---------------------------------------------------------------------------------------------------------------------------------------------
       
-      Digout(0,1)       'Freigabe für Moogventil
-      Digout(1,1)       'Freigabe für Lasersensoren
+      Digout(0,1)       'Freigabe fÃ¼r Moogventil
+      Digout(1,1)       'Freigabe fÃ¼r Lasersensoren
                  
       If (Einfahren_Piston = 0) Then
      
@@ -1951,8 +1969,8 @@ Event:
                  
     case MODUS_EMERGENCY '------------------------------------------------------------------------------------------------------------------------------------------ 
       
-      Digout(0,1)       'Freigabe für Moogventil
-      Digout(1,1)       'Freigabe für Lasersensoren           
+      Digout(0,1)       'Freigabe fÃ¼r Moogventil
+      Digout(1,1)       'Freigabe fÃ¼r Lasersensoren           
       
       DAC(DIO_Zylinder, PISTON_OFFSET) 
       DAC(DIO_SpindelA, ZERO_OFFSET)   'SpindelA not moving
@@ -2012,7 +2030,7 @@ Event:
       sync2 = FIFO_RS_SYNCED[2]
       checksum = sync1 + sync2
       
-      'prüfen ob der Datenstrom richtig synchronisiert ist
+      'prÃ¼fen ob der Datenstrom richtig synchronisiert ist
       If (checksum <> 00FFh) Then
         resync_ = resync_ + 1
         synced_ = 0
