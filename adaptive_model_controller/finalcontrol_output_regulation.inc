@@ -1,3 +1,4 @@
+
 rem  subroutine for dead zone control and safety concern for controller output 
 
 rem input args:
@@ -50,12 +51,15 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
   if (switch_frequency_button = 1) then
       
     rem second vibro mode, first hold the position for given time delay
+   
     if (Enable_vibro_mode_2 = 1) then  
+      
       if ((-420/33076) * WegInd_Digits+623   >= Switch_freq_depth ) then
-        
+           
         if (time_delay_pointer < round(time_delay_change_freq*Abtastfrequenz)) then
+          
           rem stop penetration first
-          Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
+          Soll_Position_Regelungswert = (Switch_freq_depth-623)* (-33076/420)  'Übergabe an den nächsten Case
       
           rem keep position of piston
           
@@ -66,17 +70,21 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
           If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
   
           WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
-        endif
-                             
+          
+        endif                     
       endif
     endif
+    
     rem third vibro mode, first hold the position for given time delay
+   
     if (Enable_vibro_mode_3 = 1) then
       if ((-420/33076) * WegInd_Digits+623   >= Switch_freq_depth_1 ) then
         
+        
         if (time_delay_pointer_1 < round(time_delay_change_freq_1*Abtastfrequenz)) then
+         
           rem stop penetration first
-          Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
+          Soll_Position_Regelungswert = (Switch_freq_depth_1-623)* (-33076/420)   'Übergabe an den nächsten Case
       
           rem keep position of piston
           
@@ -87,18 +95,20 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
           If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
   
           WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
-        endif
-                             
+          
+        endif                     
+        
       endif
     endif
+    
     rem fourth mode: static penetration, first hold position of given time delay
     if (time_delay_change_freq_2 = 0) then time_delay_change_freq_2 = 0.001
     if  ((-420/33076) * WegInd_Digits+623   >= Switch_freq_depth_static )  then
       inc(time_delay_pointer_2)
       if (time_delay_pointer_2 < round(time_delay_change_freq_2*Abtastfrequenz))  then
         
-        
-        Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
+       
+        Soll_Position_Regelungswert = (Switch_freq_depth_static-623)* (-33076/420)   'Übergabe an den nächsten Case
       
         rem keep position of piston
           
@@ -109,8 +119,42 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
         If (WegInd_RegOut > MAX_OUTPUT)  Then WegInd_RegOut = MAX_OUTPUT
   
         WegInd_RegOut= WegInd_RegOut + ZERO_OFFSET
+        
+          
       else
-        WegInd_RegOut = 35000
+        
+        rem static CPT parameter, 20 mm/s penetration
+        
+       
+        '
+        Vorschub = (20*78.01)/5000
+        
+        Amplitude_Vibro = 0       
+        
+        Model_Vibro = Amplitude_Vibro * sin(2*3.14159/(Sinusfrequenz_Vibro*5000) * Vibro_internal_counter) 
+        
+                
+        Soll_Position_Regelungswert = Soll_Position_Regelungswert - Vorschub 'activate vorschub
+                
+        WegInd_Delta = WegInd_Digits - Soll_Position_Regelungswert + Model_Vibro 'Model activated
+                
+                           
+        If (WegInd_Digits < 16144) then 'EndE des Reglers nahe dem Ende
+          Kp_Position_Vibro = 1
+          Ki_Position_Vibro = 1
+        EndIf   
+                  
+        WegInd_DeltaSum  = WegInd_Delta + WegInd_DeltaSum
+        
+        If (WegInd_DeltaSum < -MAX_OUTPUT) Then WegInd_DeltaSum = -MAX_OUTPUT
+        If (WegInd_DeltaSum > MAX_POS_OUTPUT) Then WegInd_DeltaSum = MAX_POS_OUTPUT
+        
+               
+        WegInd_RegOut = ( Kp_Position_Vibro * WegInd_Delta ) + ( Ki_Position_Vibro * Taktzeit * WegInd_DeltaSum )
+               
+        rem controller output for distance sensor data
+        WegInd_RegOut = WegInd_RegOut + ZERO_OFFSET
+        
       endif
     endif
   endif
@@ -168,7 +212,7 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
     endif
   else
     
-    Soll_Position_Regelungswert = WegInd_Digits   'Ãœbergabe an den nÃ¤chsten Case
+    Soll_Position_Regelungswert = WegInd_Digits   'Übergabe an den nächsten Case
       
     rem keep position of piston
           
@@ -196,8 +240,3 @@ Sub  Control_output_final_regulation(ZERO_OFFSET,MAX_OUTPUT,Kp_Position,WegInd_D
   
   
 endsub
-
-
-
-
-
