@@ -1,6 +1,4 @@
 rem subroutine to perform linear regression with incremental approaches
-rem highly efficient to perform linear regression calculation with two 1D data by updating summation and product terms in real time with an incremental approach.
-rem  instead of using loops for calculation, the computational complexity is reduced to O(1).
 rem   input args:
 rem          estimated_slope_array[]: array to store estimated slope 
 rem          estimated_intercept_array[]: array to store estimated intercept
@@ -104,6 +102,74 @@ sub sub_blockcalculation(estimated_slope_array[],estimated_intercept_array[],est
     pointer_vel_regression = 1
     rem full flag 
     v_fullFLAG = 1
+    
+    rem when data buffer are not full
+    rem velocity data some steps before, as velocity data is delayed by some time steps
+    if ((v_fullFLAG = 0)) then
+      if ((local_vel_pointer > total_shift) ) then
+        newvelocity_data[pointer_vel_regression] = velocity_data[local_vel_pointer - total_shift]
+    
+      else
+        newvelocity_data[pointer_vel_regression] = velocity_data[data_sizetrain + (local_vel_pointer - total_shift)]
+      endif
+   
+      rem current controller output
+      newcontrolleroutput[pointer_vel_regression] = WegInd_RegOut
+    endif
+    rem update x and y means
+    if (v_fullFLAG = 0) then
+      subxmean = subxmean + (newcontrolleroutput[pointer_vel_regression]/fulldata_number)
+     
+      subymean = subymean + (newvelocity_data[pointer_vel_regression]/fulldata_number)
+      rem calculate sub xy sum and xx sum for linear regression 
+      subxydiffpsum = subxydiffpsum + newcontrolleroutput[pointer_vel_regression]*newvelocity_data[pointer_vel_regression]
+      subxsquaresum =  subxsquaresum + newcontrolleroutput[pointer_vel_regression]*newcontrolleroutput[pointer_vel_regression]
+    endif
+    if (( pointer_vel_regression = fulldata_number) and (v_fullFLAG = 0)) then
+      rem set data buffer full flag
+      v_fullFLAG = 1
+      rem calculate estimated parameters
+      linear_coff[1] = (subxydiffpsum - subymean*fulldata_number*subxmean) / (subxsquaresum - fulldata_number*subxmean*subxmean) 'm Steigung  
+  
+      linear_coff[2] = subymean-linear_coff[1]*subxmean 'b yAchsenabsch
+    endif
+    
+    rem when data buffer are full, subtract old term values and add new term
+    if (v_fullFLAG = 1) then
+     
+      rem subtract old value
+      subxmean = subxmean - (newcontrolleroutput[pointer_vel_regression]/fulldata_number)
+     
+      subymean = subymean - (newvelocity_data[pointer_vel_regression]/fulldata_number)
+      subxydiffpsum = subxydiffpsum - newcontrolleroutput[pointer_vel_regression]*newvelocity_data[pointer_vel_regression]
+      subxsquaresum =  subxsquaresum - newcontrolleroutput[pointer_vel_regression]*newcontrolleroutput[pointer_vel_regression]
+      rem assign current values
+      if ((local_vel_pointer > total_shift) ) then
+        newvelocity_data[pointer_vel_regression] = velocity_data[local_vel_pointer - total_shift]
+    
+      else
+        newvelocity_data[pointer_vel_regression] = velocity_data[data_sizetrain + (local_vel_pointer - total_shift)]
+      endif
+      newcontrolleroutput[pointer_vel_regression] = WegInd_RegOut
+      
+        
+      rem add new value
+      subxmean = subxmean + (newcontrolleroutput[pointer_vel_regression]/fulldata_number)
+      subymean = subymean +  (newvelocity_data[pointer_vel_regression]/fulldata_number)
+      subxydiffpsum = subxydiffpsum + newcontrolleroutput[pointer_vel_regression]*newvelocity_data[pointer_vel_regression]
+      subxsquaresum =  subxsquaresum + newcontrolleroutput[pointer_vel_regression]*newcontrolleroutput[pointer_vel_regression]
+      
+      
+      rem calculate estimated parameters
+      linear_coff[1] = (subxydiffpsum - subymean*fulldata_number*subxmean) / (subxsquaresum - fulldata_number*subxmean*subxmean) 'm Steigung  
+  
+      linear_coff[2] = subymean-linear_coff[1]*subxmean 'b yAchsenabsch
+     
+    endif
+    rem update index
+    pointer_vel_regression = pointer_vel_regression + 1
+    
+    
   endif
  
   rem record estimated parameters
