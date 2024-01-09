@@ -15,11 +15,11 @@ Motion control performance for CPT hydraulic piston with adaptive MPC.
 <br/>
 Simulation setup: 
 
-| Header 1 | Header 2 | Header 3 |
+| Vibration Frequency | Vibration Amplitude | penetration depth |
 | ---------| ---------| ---------|
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
-| Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
+| 5 Hz| 1 mm | 220 mm |
+| 5 Hz| 2 mm | 280 mm |
+| 5 Hz| 3 mm | 330 mm |
 
 
 <p align="center">
