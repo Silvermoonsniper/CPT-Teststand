@@ -13,9 +13,13 @@ Motion control for the cone with switchable control methods: adaptive model pred
 # Simulation example
 Motion control performance for CPT hydraulic piston with adaptive MPC. 
 <br/>
-Simulation setup: <br/>
-     vibration frequency: 10 Hz <br/>
-     vibration amplitude: 1 mm 
+Simulation setup: 
+
+| Header 1 | Header 2 | Header 3 |
+| ---------| ---------| ---------|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
+| Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
 
 
 <p align="center">
@@ -25,3 +29,6 @@ Simulation setup: <br/>
 <p align="center">
   <img src="https://user-images.githubusercontent.com/89796179/199206693-4056337e-d6e6-48f7-b197-509d15f7e5df.png" width="600" />
   </p>
+
+
+
