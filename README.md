@@ -31,7 +31,7 @@ Simulation results and error analysis for whole push of VCPT testing
   </p>
 For first vibro penetration
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/89796179/199206693-4056337e-d6e6-48f7-b197-509d15f7e5df.png" width="600" />
+  <img src="https://private-user-images.githubusercontent.com/89796179/295247068-d9294d76-c097-4b3f-a351-40264b663740.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDQ4MTMxNjMsIm5iZiI6MTcwNDgxMjg2MywicGF0aCI6Ii84OTc5NjE3OS8yOTUyNDcwNjgtZDkyOTRkNzYtYzA5Ny00YjNmLWEzNTEtNDAyNjRiNjYzNzQwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAxMDklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMTA5VDE1MDc0M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTVjNjFhMjgwYmVjODU2OTg1MGY2NjViNWYwNjYxOGE4NDkxNzU2NjVlOGEzODdlYzRkZDgzMjhiMmUwYzNmNjImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.V8BgClBA9nafSAECNrJFiOvFVcvkt9HHf6lCXMvw7Wg" width="600" />
   </p>
 
 
